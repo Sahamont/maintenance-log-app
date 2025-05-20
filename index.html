@@ -34,10 +34,11 @@
   </form>
 
   <p><strong>Note:</strong> This form does not save data yet.</p>
-  <script>
+   <script>
   const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   document.getElementById('logForm').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -47,7 +48,7 @@
     const technician = this.technician.value;
     const date = this.date.value;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('maintenance_logs')
       .insert([{ machine, maintenance, technician, date }]);
 
@@ -58,6 +59,7 @@
       this.reset();
     }
   });
-</script>
+  </script>
+
 </body>
 </html>
