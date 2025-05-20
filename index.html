@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Maintenance Log</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
   <h1>Machine Maintenance Log</h1>
@@ -33,5 +34,30 @@
   </form>
 
   <p><strong>Note:</strong> This form does not save data yet.</p>
+  <script>
+  const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  document.getElementById('logForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const machine = this.machine.value;
+    const maintenance = this.maintenance.value;
+    const technician = this.technician.value;
+    const date = this.date.value;
+
+    const { data, error } = await supabase
+      .from('maintenance_logs')
+      .insert([{ machine, maintenance, technician, date }]);
+
+    if (error) {
+      alert('Error saving log: ' + error.message);
+    } else {
+      alert('Maintenance log saved!');
+      this.reset();
+    }
+  });
+</script>
 </body>
 </html>
