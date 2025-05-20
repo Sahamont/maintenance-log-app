@@ -2,11 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Maintenance Log</title>
 </head>
 <body>
   <h1>Machine Maintenance Log</h1>
-  <p>This will be your future form for logging entries.</p>
+
+  <form id="logForm">
+    <label>
+      Machine Name:
+      <input type="text" name="machine" required />
+    </label><br /><br />
+
+    <label>
+      Maintenance Performed:
+      <textarea name="maintenance" required></textarea>
+    </label><br /><br />
+
+    <label>
+      Technician Name:
+      <input type="text" name="technician" required />
+    </label><br /><br />
+
+    <label>
+      Date:
+      <input type="date" name="date" required />
+    </label><br /><br />
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <p><strong>Note:</strong> This form does not save data yet.</p>
 </body>
 </html>
