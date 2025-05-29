@@ -79,7 +79,7 @@
       const { data: logs } = await client
         .from('maintenance_logs')
         .select('*')
-        .eq('machine_id', machineId)
+        .eq('machineId', machineId)
         .order('date', { ascending: false })
         .limit(5);
 
