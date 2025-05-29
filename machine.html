@@ -49,7 +49,7 @@
       const { data: machine, error } = await client
         .from('machines')
         .select('*')
-        .eq('id', machineId)
+        .eq('machineId', machineId)
         .single();
 
       if (error || !machine) {
