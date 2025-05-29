@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Machine ID Card</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+  <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-center">Machine ID Card</h1>
+    <div id="machine-info" class="space-y-2"></div>
+
+    <div class="border-t pt-4">
+      <h2 class="text-xl font-semibold">Recent Maintenance Records</h2>
+      <ul id="maintenance-records" class="list-disc list-inside"></ul>
+    </div>
+
+    <div class="text-center pt-4">
+      <a id="logButton" href="log.html" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        ➕ New Maintenance Entry
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const params = new URLSearchParams(window.location.search);
+    const machineId = params.get("id");
+
+    async function loadMachineData() {
+      if (!machineId) return;
+
+      const { data: machine, error } = await supabase
+        .from('machines')
+        .select('*')
+        .eq('id', machineId)
+        .single();
+
+      if (error || !machine) {
+        document.getElementById("machine-info").innerHTML = "<p>Machine not found.</p>";
+        return;
+      }
+
+      const infoHTML = `
+        <p><strong>Name:</strong> ${machine.name}</p>
+        <p><strong>Model:</strong> ${machine.model}</p>
+        <p><strong>Serial Number:</strong> ${machine.serial_number}</p>
+        <p><strong>Installed:</strong> ${machine.date_installed}</p>
+        <p><strong>Location:</strong> ${machine.location}</p>
+        <p><strong>Use:</strong> ${machine.use}</p>
+        <p><strong>Observations:</strong> ${machine.observations}</p>
+        <p><strong>Recommendations:</strong> ${machine.recommendations}</p>
+        <p><strong>Downtime:</strong> ${machine.downtime}</p>
+        <p><strong>Contact Info:</strong> ${machine.contact_info}</p>
+      `;
+      document.getElementById("machine-info").innerHTML = infoHTML;
+
+      // Link to maintenance form with machine ID
+      document.getElementById("logButton").href = `log.html?machine_id=${machine.id}`;
+
+      // Load maintenance logs
+      const { data: logs } = await supabase
+        .from('maintenance_logs')
+        .select('*')
+        .eq('machine_id', machineId)
+        .order('date', { ascending: false })
+        .limit(5);
+
+      const list = logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`);
+      document.getElementById("maintenance-records").innerHTML = list.join('') || "<p>No records yet.</p>";
+    }
+
+    loadMachineData();
+  </script>
+</body>
+</html>
