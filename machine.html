@@ -72,8 +72,8 @@
       document.getElementById("machine-info").innerHTML = infoHTML;
 
       // Set up buttons with dynamic links
-      document.getElementById("logButton").href = `log.html?machine_id=${machine.id}`;
-      document.getElementById("editButton").href = `edit-machine.html?id=${machine.id}`;
+      document.getElementById("logButton").href = `log.html?machine_id=${machine.machineId}`;
+      document.getElementById("editButton").href = `edit-machine.html?id=${machine.machineId}`;
 
       // Load maintenance logs
       const { data: logs } = await client
