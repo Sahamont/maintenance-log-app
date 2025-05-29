@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Machine</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co'; // Replace with your URL
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE'; // Replace with your anon key
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+</head>
+<body>
+  <h1>Edit Machine Info</h1>
+
+  <form id="editForm">
+    <label>
+      Machine Name:
+      <input type="text" id="machineName" name="name" required />
+    </label><br /><br />
+
+    <label>
+      Model:
+      <input type="text" id="model" name="model" required />
+    </label><br /><br />
+
+    <label>
+      Serial Number:
+      <input type="text" id="serial" name="serial" required />
+    </label><br /><br />
+
+    <label>
+      Location:
+      <input type="text" id="location" name="location" />
+    </label><br /><br />
+
+    <button type="submit">Save Changes</button>
+  </form>
+
+  <p id="statusMessage"></p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const machineId = params.get("id");
+
+    async function loadMachine() {
+      const { data, error } = await supabase
+        .from('machines')
+        .select('*')
+        .eq('id', machineId)
+        .single();
+
+      if (error) {
+        document.getElementById("statusMessage").textContent = "Error loading data.";
+        return;
+      }
+
+      document.getElementById("machineName").value = data.name || "";
+      document.getElementById("model").value = data.model || "";
+      document.getElementById("serial").value = data.serial || "";
+      document.getElementById("location").value = data.location || "";
+    }
+
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const updates = {
+        name: document.getElementById("machineName").value,
+        model: document.getElementById("model").value,
+        serial: document.getElementById("serial").value,
+        location: document.getElementById("location").value,
+      };
+
+      const { error } = await supabase
+        .from('machines')
+        .update(updates)
+        .eq('id', machineId);
+
+      if (error) {
+        document.getElementById("statusMessage").textContent = "Update failed.";
+      } else {
+        document.getElementById("statusMessage").textContent = "Update successful!";
+      }
+    });
+
+    loadMachine();
+  </script>
+</body>
+</html>
