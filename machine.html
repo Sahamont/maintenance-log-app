@@ -6,20 +6,30 @@
   <title>Machine ID Card</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800 p-6">
-  <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6 space-y-4">
-    <h1 class="text-2xl font-bold text-center">Machine ID Card</h1>
-    <div id="machine-info" class="space-y-2"></div>
+<body class="bg-gray-100 text-gray-800 p-6 flex items-center justify-center min-h-screen">
+  <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6 space-y-4 border border-gray-200">
+    <h1 class="text-2xl font-bold text-center text-blue-700">Machine ID Card</h1>
+
+    <div id="machine-info" class="space-y-2 text-base"></div>
 
     <div class="border-t pt-4">
-      <h2 class="text-xl font-semibold">Recent Maintenance Records</h2>
-      <ul id="maintenance-records" class="list-disc list-inside"></ul>
+      <h2 class="text-xl font-semibold mb-2 text-blue-600">Recent Maintenance Records</h2>
+      <ul id="maintenance-records" class="list-disc list-inside text-sm text-gray-700"></ul>
     </div>
 
-    <div class="text-center pt-4">
-      <a id="logButton" href="log.html" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+    <div class="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
+      <a id="logButton" href="log.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-center">
         ➕ New Maintenance Entry
+      </a>
+      <a id="editButton" href="#" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 text-center">
+        ✏️ Edit Machine Info
       </a>
     </div>
   </div>
@@ -27,7 +37,8 @@
   <script>
     const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const params = new URLSearchParams(window.location.search);
     const machineId = params.get("id");
@@ -35,14 +46,14 @@
     async function loadMachineData() {
       if (!machineId) return;
 
-      const { data: machine, error } = await supabase
+      const { data: machine, error } = await client
         .from('machines')
         .select('*')
         .eq('id', machineId)
         .single();
 
       if (error || !machine) {
-        document.getElementById("machine-info").innerHTML = "<p>Machine not found.</p>";
+        document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>Machine not found.</p>";
         return;
       }
 
@@ -60,19 +71,23 @@
       `;
       document.getElementById("machine-info").innerHTML = infoHTML;
 
-      // Link to maintenance form with machine ID
+      // Set up buttons with dynamic links
       document.getElementById("logButton").href = `log.html?machine_id=${machine.id}`;
+      document.getElementById("editButton").href = `edit-machine.html?id=${machine.id}`;
 
       // Load maintenance logs
-      const { data: logs } = await supabase
+      const { data: logs } = await client
         .from('maintenance_logs')
         .select('*')
         .eq('machine_id', machineId)
         .order('date', { ascending: false })
         .limit(5);
 
-      const list = logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`);
-      document.getElementById("maintenance-records").innerHTML = list.join('') || "<p>No records yet.</p>";
+      const list = logs.length
+        ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
+        : ["<li>No maintenance records found.</li>"];
+
+      document.getElementById("maintenance-records").innerHTML = list.join('');
     }
 
     loadMachineData();
