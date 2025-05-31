@@ -43,54 +43,54 @@
     const params = new URLSearchParams(window.location.search);
     const machineId = params.get("id");
 
-   
     async function loadMachineData() {
-  if (!machineId) return;
+      if (!machineId) return;
 
-  const { data: machine, error } = await client
-    .from('machines')
-    .select('*')
-    .eq('machineId', machineId)
-    .single();
+      // ✅ Get machine without `.single()`
+      const { data: machines, error } = await client
+        .from('machines')
+        .select('*')
+        .eq('machineId', machineId);
 
-  if (error || !machine) {
-    document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>Machine not found.</p>";
-    console.error(error);
-    return;
-  }
+      if (error || !machines || machines.length === 0) {
+        document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>Machine not found.</p>";
+        console.error(error || 'No machine returned');
+        return;
+      }
 
-  const infoHTML = `
-    <p><strong>Name:</strong> ${machine.name}</p>
-    <p><strong>Model:</strong> ${machine.model}</p>
-    <p><strong>Serial Number:</strong> ${machine.serial_number}</p>
-    <p><strong>Installed:</strong> ${machine.date_installed}</p>
-    <p><strong>Location:</strong> ${machine.location}</p>
-    <p><strong>Use:</strong> ${machine.use}</p>
-    <p><strong>Observations:</strong> ${machine.observations}</p>
-    <p><strong>Recommendations:</strong> ${machine.recommendations}</p>
-    <p><strong>Downtime:</strong> ${machine.downtime}</p>
-    <p><strong>Contact Info:</strong> ${machine.contact_info}</p>
-  `;
-  document.getElementById("machine-info").innerHTML = infoHTML;
+      const machine = machines[0];
 
-  // ✅ Fix button URLs using correct machineId
-  document.getElementById("logButton").href = `log.html?machine_id=${machine.machineId}`;
-  document.getElementById("editButton").href = `edit-machine.html?id=${machine.machineId}`;
+      const infoHTML = `
+        <p><strong>Name:</strong> ${machine.name}</p>
+        <p><strong>Model:</strong> ${machine.model}</p>
+        <p><strong>Serial Number:</strong> ${machine.serial_number}</p>
+        <p><strong>Installed:</strong> ${machine.date_installed}</p>
+        <p><strong>Location:</strong> ${machine.location}</p>
+        <p><strong>Use:</strong> ${machine.use}</p>
+        <p><strong>Observations:</strong> ${machine.observations}</p>
+        <p><strong>Recommendations:</strong> ${machine.recommendations}</p>
+        <p><strong>Downtime:</strong> ${machine.downtime}</p>
+        <p><strong>Contact Info:</strong> ${machine.contact_info}</p>
+      `;
+      document.getElementById("machine-info").innerHTML = infoHTML;
 
-  // ✅ Fix second query
-  const { data: logs } = await client
-    .from('maintenance_logs')
-    .select('*')
-    .eq('machineId', machineId)
-    .order('date', { ascending: false })
-    .limit(5);
+      // ✅ Set correct dynamic links
+      document.getElementById("logButton").href = `log.html?machine_id=${machine.machineId}`;
+      document.getElementById("editButton").href = `edit-machine.html?id=${machine.machineId}`;
 
-  const list = logs?.length
-    ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
-    : ["<li>No maintenance records found.</li>"];
+      // ✅ Fetch maintenance logs using machineId
+      const { data: logs, error: logsError } = await client
+        .from('maintenance_logs')
+        .select('*')
+        .eq('machineId', machine.machineId)
+        .order('date', { ascending: false })
+        .limit(5);
 
-  document.getElementById("maintenance-records").innerHTML = list.join('');
-      
+      const list = logs && logs.length
+        ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
+        : ["<li>No maintenance records found.</li>"];
+
+      document.getElementById("maintenance-records").innerHTML = list.join('');
     }
 
     loadMachineData();
