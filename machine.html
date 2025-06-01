@@ -50,7 +50,7 @@
       const { data: machines, error } = await client
         .from('machines')
         .select('*')
-        .eq(machineId, machineId);
+        .eq('machineId', machineId);
 
       if (error || !machines || machines.length === 0) {
         document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>Machine not found.</p>";
@@ -82,7 +82,7 @@
       const { data: logs, error: logsError } = await client
         .from('maintenance_logs')
         .select('*')
-        .eq(machineId, machine.machineId)
+        .eq('machineId', machine.machineId)
         .order('date', { ascending: false })
         .limit(5);
 
