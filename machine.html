@@ -37,28 +37,32 @@
   <script>
     const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
-
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const params = new URLSearchParams(window.location.search);
-    const machineId = params.get("machineId");
-
     async function loadMachineData() {
-      if (!machineId) return;
+      const params = new URLSearchParams(window.location.search);
+      const machineId = params.get("machineId");
 
-      // ✅ Get machine without `.single()`
-      const { data: machines, error } = await client
-        .from('machines')
-        .select('*')
-        .eq('machineId', machineId);
+      console.log("machineId from URL:", machineId); // Debug
 
-      if (error || !machines || machines.length === 0) {
-        document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>Machine not found.</p>";
-        console.error(error || 'No machine returned');
+      if (!machineId) {
+        document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>No machine ID in URL.</p>";
         return;
       }
 
-      const machine = machines[0];
+      const { data: machine, error } = await client
+        .from('machines')
+        .select('*')
+        .eq('machineId', machineId)
+        .single();
+
+      console.log("Supabase returned machine:", machine);
+      console.log("Supabase returned error:", error);
+
+      if (error || !machine) {
+        document.getElementById("machine-info").innerHTML = "<p class='text-red-600'>Machine not found.</p>";
+        return;
+      }
 
       const infoHTML = `
         <p><strong>Name:</strong> ${machine.name}</p>
@@ -74,19 +78,19 @@
       `;
       document.getElementById("machine-info").innerHTML = infoHTML;
 
-      // ✅ Set correct dynamic links
-      document.getElementById("logButton").href = `log.html?machine_id=${machine.machineId}`;
-      document.getElementById("editButton").href = `edit-machine.html?id=${machine.machineId}`;
+      // Update button links
+      document.getElementById("logButton").href = `log.html?machineId=${machine.machineId}`;
+      document.getElementById("editButton").href = `edit-machine.html?machineId=${machine.machineId}`;
 
-      // ✅ Fetch maintenance logs using machineId
-      const { data: logs, error: logsError } = await client
+      // Load maintenance logs
+      const { data: logs } = await client
         .from('maintenance_logs')
         .select('*')
-        .eq('machineId', machine.machineId)
+        .eq('machineId', machineId)
         .order('date', { ascending: false })
         .limit(5);
 
-      const list = logs && logs.length
+      const list = logs?.length
         ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
         : ["<li>No maintenance records found.</li>"];
 
