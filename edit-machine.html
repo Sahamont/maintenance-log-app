@@ -14,34 +14,22 @@
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-
-  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-xl border border-gray-200">
+  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-2xl border border-gray-200">
     <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">Edit Machine Info</h1>
 
     <form id="editForm" class="space-y-4">
-      <div>
-        <label class="block font-semibold mb-1">Machine Name:</label>
-        <input type="text" id="machineName" name="name" required class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
+      <div><label class="block font-semibold mb-1">Machine Name:</label><input type="text" id="machineName" required class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Model:</label><input type="text" id="model" required class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Serial Number:</label><input type="text" id="serial_number" required class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Date Installed:</label><input type="date" id="date_installed" class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Location:</label><input type="text" id="location" class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Use:</label><input type="text" id="use" class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Observations:</label><textarea id="observations" class="w-full border rounded px-3 py-2"></textarea></div>
+      <div><label class="block font-semibold mb-1">Recommendations:</label><textarea id="recommendations" class="w-full border rounded px-3 py-2"></textarea></div>
+      <div><label class="block font-semibold mb-1">Downtime:</label><input type="text" id="downtime" class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Contact Info:</label><input type="text" id="contact_info" class="w-full border rounded px-3 py-2" /></div>
 
-      <div>
-        <label class="block font-semibold mb-1">Model:</label>
-        <input type="text" id="model" name="model" required class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Serial Number:</label>
-        <input type="text" id="serial" name="serial" required class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Location:</label>
-        <input type="text" id="location" name="location" class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
-        Save Changes
-      </button>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">Save Changes</button>
     </form>
 
     <p id="statusMessage" class="mt-4 text-center text-sm"></p>
@@ -49,7 +37,7 @@
 
   <script>
     const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // redacted for security
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const params = new URLSearchParams(window.location.search);
@@ -62,16 +50,23 @@
         .eq('machineId', machineId)
         .limit(1);
 
-      if (error) {
+      if (error || !data || data.length === 0) {
         document.getElementById("statusMessage").textContent = "Error loading data.";
         document.getElementById("statusMessage").classList.add("text-red-600");
         return;
       }
 
-      document.getElementById("machineName").value = data.name || "";
-      document.getElementById("model").value = data.model || "";
-      document.getElementById("serial").value = data.serial || "";
-      document.getElementById("location").value = data.location || "";
+      const machine = data[0];
+      document.getElementById("machineName").value = machine.name || "";
+      document.getElementById("model").value = machine.model || "";
+      document.getElementById("serial_number").value = machine.serial_number || "";
+      document.getElementById("date_installed").value = machine.date_installed || "";
+      document.getElementById("location").value = machine.location || "";
+      document.getElementById("use").value = machine.use || "";
+      document.getElementById("observations").value = machine.observations || "";
+      document.getElementById("recommendations").value = machine.recommendations || "";
+      document.getElementById("downtime").value = machine.downtime || "";
+      document.getElementById("contact_info").value = machine.contact_info || "";
     }
 
     document.getElementById("editForm").addEventListener("submit", async (e) => {
@@ -80,8 +75,14 @@
       const updates = {
         name: document.getElementById("machineName").value,
         model: document.getElementById("model").value,
-        serial: document.getElementById("serial").value,
+        serial_number: document.getElementById("serial_number").value,
+        date_installed: document.getElementById("date_installed").value,
         location: document.getElementById("location").value,
+        use: document.getElementById("use").value,
+        observations: document.getElementById("observations").value,
+        recommendations: document.getElementById("recommendations").value,
+        downtime: document.getElementById("downtime").value,
+        contact_info: document.getElementById("contact_info").value,
       };
 
       const { error } = await client
