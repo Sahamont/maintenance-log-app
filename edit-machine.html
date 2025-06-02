@@ -60,7 +60,7 @@
         .from('machines')
         .select('*')
         .eq('machineId', machineId)
-        .single();
+        .limit(1);
 
       if (error) {
         document.getElementById("statusMessage").textContent = "Error loading data.";
