@@ -53,13 +53,13 @@
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const params = new URLSearchParams(window.location.search);
-    const machineId = params.get("id");
+    const machineId = params.get("machineId");
 
     async function loadMachine() {
       const { data, error } = await client
         .from('machines')
         .select('*')
-        .eq('id', machineId)
+        .eq('machineId', machineId)
         .single();
 
       if (error) {
@@ -87,7 +87,7 @@
       const { error } = await client
         .from('machines')
         .update(updates)
-        .eq('id', machineId);
+        .eq('machineId', machineId);
 
       const message = document.getElementById("statusMessage");
       if (error) {
