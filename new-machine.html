@@ -91,7 +91,7 @@
         contact: document.getElementById("contact").value,
       };
 
-      const { error } = await client.from("machines").insert(newMachine);
+      const { error } = await client.from("machines").insert([newMachine]);
 
       const status = document.getElementById("statusMessage");
       if (error) {
