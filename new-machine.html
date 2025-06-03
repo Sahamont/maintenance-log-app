@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Machine Entry</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white p-6 rounded shadow-lg w-full max-w-xl">
+    <h1 class="text-2xl font-bold mb-6 text-center text-green-700">Add New Machine</h1>
+
+    <form id="newMachineForm" class="space-y-4">
+      <input type="text" id="name" placeholder="Machine Name" required class="w-full border rounded px-3 py-2" />
+      <input type="text" id="model" placeholder="Model" required class="w-full border rounded px-3 py-2" />
+      <input type="text" id="serial" placeholder="Serial Number" required class="w-full border rounded px-3 py-2" />
+      <input type="text" id="location" placeholder="Location" class="w-full border rounded px-3 py-2" />
+      <input type="date" id="installDate" class="w-full border rounded px-3 py-2" />
+      <input type="text" id="use" placeholder="Use" class="w-full border rounded px-3 py-2" />
+      <textarea id="observations" placeholder="Observations" class="w-full border rounded px-3 py-2"></textarea>
+      <textarea id="recommendations" placeholder="Recommendations" class="w-full border rounded px-3 py-2"></textarea>
+      <input type="text" id="contact" placeholder="Contact Info" class="w-full border rounded px-3 py-2" />
+
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Add Machine</button>
+    </form>
+
+    <p id="statusMessage" class="mt-4 text-center text-sm"></p>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE'; // replace this!
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    document.getElementById("newMachineForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const machineId = crypto.randomUUID(); // auto-generate UUID
+
+      const newMachine = {
+        machineId,
+        name: document.getElementById("name").value,
+        model: document.getElementById("model").value,
+        serial: document.getElementById("serial").value,
+        location: document.getElementById("location").value,
+        installDate: document.getElementById("installDate").value,
+        use: document.getElementById("use").value,
+        observations: document.getElementById("observations").value,
+        recommendations: document.getElementById("recommendations").value,
+        contact: document.getElementById("contact").value,
+      };
+
+      const { error } = await client.from("machines").insert(newMachine);
+
+      const status = document.getElementById("statusMessage");
+      if (error) {
+        status.textContent = "❌ Failed to add machine.";
+        status.classList.remove("text-green-600");
+        status.classList.add("text-red-600");
+      } else {
+        status.textContent = "✅ Machine added successfully!";
+        status.classList.remove("text-red-600");
+        status.classList.add("text-green-600");
+        e.target.reset(); // Clear the form
+      }
+    });
+  </script>
+
+</body>
+</html>
