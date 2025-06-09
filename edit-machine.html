@@ -27,7 +27,7 @@
       <div><label class="block font-semibold mb-1">Observations:</label><textarea id="observations" class="w-full border rounded px-3 py-2"></textarea></div>
       <div><label class="block font-semibold mb-1">Recommendations:</label><textarea id="recommendations" class="w-full border rounded px-3 py-2"></textarea></div>
       <div><label class="block font-semibold mb-1">Downtime:</label><input type="text" id="downtime" class="w-full border rounded px-3 py-2" /></div>
-      <div><label class="block font-semibold mb-1">Contact Info:</label><input type="text" id="contact_info" class="w-full border rounded px-3 py-2" /></div>
+      <div><label class="block font-semibold mb-1">Contact Info:</label><input type="text" id="contact" class="w-full border rounded px-3 py-2" /></div>
 
       <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">Save Changes</button>
     </form>
@@ -66,7 +66,7 @@
       document.getElementById("observations").value = machine.observations || "";
       document.getElementById("recommendations").value = machine.recommendations || "";
       document.getElementById("downtime").value = machine.downtime || "";
-      document.getElementById("contact_info").value = machine.contact_info || "";
+      document.getElementById("contact").value = machine.contact || "";
     }
 
     document.getElementById("editForm").addEventListener("submit", async (e) => {
@@ -82,7 +82,7 @@
         observations: document.getElementById("observations").value,
         recommendations: document.getElementById("recommendations").value,
         downtime: document.getElementById("downtime").value,
-        contact_info: document.getElementById("contact_info").value,
+        contact: document.getElementById("contact").value,
       };
 
       const { error } = await client
