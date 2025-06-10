@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log Maintenance</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-xl border border-gray-200">
+    <h1 class="text-2xl font-bold mb-6 text-center text-green-700">New Maintenance Log</h1>
+
+    <form id="logForm" class="space-y-4">
+      <div>
+        <label class="block font-semibold mb-1">Machine ID:</label>
+        <input type="text" id="machineId" class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100" readonly />
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Machine Name:</label>
+        <input type="text" id="machineName" class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100" readonly />
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Date:</label>
+        <input type="date" id="date" required class="w-full border border-gray-300 rounded px-3 py-2" />
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Maintenance Performed:</label>
+        <textarea id="maintenance" required class="w-full border border-gray-300 rounded px-3 py-2"></textarea>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Technician:</label>
+        <input type="text" id="technician" required class="w-full border border-gray-300 rounded px-3 py-2" />
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Notes:</label>
+        <textarea id="notes" class="w-full border border-gray-300 rounded px-3 py-2"></textarea>
+      </div>
+
+      <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition">
+        Submit Log
+      </button>
+    </form>
+
+    <p id="statusMessage" class="mt-4 text-center text-sm"></p>
+  </div>
+
+  <script>
+    
+    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
+    const SUPABASE_KEY = 'your_anon_key_here'; // Replace with your actual anon key
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  
+    const params = new URLSearchParams(window.location.search);
+    const machineId = params.get("machineId");
+    const machineName = params.get("name");
+  
+    document.getElementById("machineId").value = machineId || "";
+    document.getElementById("machineName").value = machineName || "";
+  
+    document.getElementById("logForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+  
+      const newLog = {
+        machine_id: machineId,
+        created_at: document.getElementById("date").value,
+        maintenance: document.getElementById("maintenance").value,
+        technician: document.getElementById("technician").value,
+        notes: document.getElementById("notes").value
+      };
+  
+      const { error } = await client.from("maintenance_logs").insert([newLog]);
+  
+      const status = document.getElementById("statusMessage");
+      if (error) {
+        status.textContent = "❌ Failed to submit log.";
+        status.className = "mt-4 text-center text-sm text-red-600";
+      } else {
+        status.textContent = "✅ Maintenance log submitted! Redirecting...";
+        status.className = "mt-4 text-center text-sm text-green-700";
+  
+        setTimeout(() => {
+          window.location.href = `machine.html?machineId=${machineId}`;
+        }, 1500); // Redirect after 1.5 seconds
+      }
+    });
+      
+  </script>
+
+</body>
+</html>
