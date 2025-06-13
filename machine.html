@@ -79,7 +79,7 @@
       `;
       document.getElementById("machine-info").innerHTML = infoHTML;
 
-      document.getElementById("logButton").href = `log.html?machineId=${machine.machineId}&machine=${encodeURIComponent(machine.name)}`;
+      document.getElementById("logButton").href = `log.html?machineId=${machine.machineId}&machine=${encodeURIComponent(machine.machine)}`;
       document.getElementById("editButton").href = `edit-machine.html?machineId=${machine.machineId}`;
 
       const { data: logs } = await client
