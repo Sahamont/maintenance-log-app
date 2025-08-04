@@ -2,84 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Maintenance Log</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maintenance Log Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-  </style>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-xl border border-gray-200">
-    <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">Machine Maintenance Log</h1>
+  <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md text-center border border-gray-200">
+    <h1 class="text-3xl font-bold text-blue-700 mb-6">🏭 Maintenance Dashboard</h1>
 
-    <form id="logForm" class="space-y-4">
-      <div>
-        <label class="block font-semibold mb-1">Machine Name:</label>
-        <input type="text" name="machine" required class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Maintenance Performed:</label>
-        <textarea name="maintenance" required class="w-full border border-gray-300 rounded px-3 py-2"></textarea>
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Technician Name:</label>
-        <input type="text" name="technician" required class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Date:</label>
-        <input type="date" name="date" required class="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
-        Submit
-      </button>
-    </form>
-
-    <div id="successMessage" class="hidden mt-4 bg-green-100 text-green-800 p-3 rounded shadow text-center"></div>
+    <div class="space-y-4">
+      <a href="new-machine.html" class="block bg-green-600 text-white py-3 rounded hover:bg-green-700 transition">➕ Add New Machine</a>
+      <a href="machines.html" class="block bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition">📋 View Machines</a>
+      <a href="dashboard.html" class="block bg-yellow-500 text-white py-3 rounded hover:bg-yellow-600 transition">📊 View Dashboard</a>
+      <a href="log-view.html" class="block bg-gray-700 text-white py-3 rounded hover:bg-gray-800 transition">📁 View Maintenance Logs</a>
+    </div>
   </div>
 
-  <script>
-    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
-    
-    // Renamed to avoid conflict with the library
-    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    document.getElementById('logForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-
-      const machine = this.machine.value;
-      const maintenance = this.maintenance.value;
-      const technician = this.technician.value;
-      const date = this.date.value;
-
-      const { data, error } = await client
-        .from('maintenance_logs')
-        .insert([{ machine, maintenance, technician, date }]);
-
-      const successMessage = document.getElementById('successMessage');
-
-      if (error) {
-        successMessage.textContent = 'Error saving log: ' + error.message;
-        successMessage.classList.remove('hidden');
-        successMessage.classList.remove('bg-green-100');
-        successMessage.classList.add('bg-red-100', 'text-red-800');
-      } else {
-        successMessage.textContent = 'Maintenance log saved!';
-        successMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800');
-        successMessage.classList.add('bg-green-100', 'text-green-800');
-        this.reset();
-      }
-    });
-  </script>
 </body>
 </html>
+
