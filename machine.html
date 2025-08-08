@@ -82,17 +82,12 @@
       document.getElementById("logButton").href = `log.html?machineId=${machine.machineId}&machine=${encodeURIComponent(machine.machine)}`;
       document.getElementById("editButton").href = `edit-machine.html?machineId=${machine.machineId}`;
 
-      const { data: logs, error: logsError } = await client
+      const { data: logs } = await client
         .from('maintenance_logs')
         .select('*')
         .eq('machineId', machineId)
         .order('date', { ascending: false })
         .limit(5);
-
-      if (logsError) {
-        console.error("Error fetching logs:", logsError);
-      }
-
 
       const list = logs?.length
         ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
