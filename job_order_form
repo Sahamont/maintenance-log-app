@@ -1,2 +1,109 @@
-console.log("logs:", logs);
-console.log("logError:", logError);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align:center;">T-Shirt Order Form</h2>
+    <form id="orderForm">
+        
+        <label for="customerName">Customer Name</label>
+        <input type="text" id="customerName" name="customerName" required>
+
+        <label for="projectName">Project Name</label>
+        <input type="text" id="projectName" name="projectName" required>
+
+        <label for="tshirtType">T-Shirt Type</label>
+        <select id="tshirtType" name="tshirtType" required>
+            <option value="">Select type</option>
+            <option value="Cotton">Cotton</option>
+            <option value="Polyester">Polyester</option>
+            <option value="Blend">Blend</option>
+            <option value="Performance">Performance</option>
+        </select>
+
+        <label for="color">T-Shirt Color</label>
+        <input type="text" id="color" name="color" required>
+
+        <label for="sizeSmall">Small</label>
+        <input type="number" id="sizeSmall" name="sizeSmall" min="0" value="0">
+
+        <label for="sizeMedium">Medium</label>
+        <input type="number" id="sizeMedium" name="sizeMedium" min="0" value="0">
+
+        <label for="sizeLarge">Large</label>
+        <input type="number" id="sizeLarge" name="sizeLarge" min="0" value="0">
+
+        <label for="sizeXL">Extra Large (XL)</label>
+        <input type="number" id="sizeXL" name="sizeXL" min="0" value="0">
+
+        <label for="size2XL">Double Extra Large (2XL)</label>
+        <input type="number" id="size2XL" name="size2XL" min="0" value="0">
+
+        <label for="size3XL">Triple Extra Large (3XL)</label>
+        <input type="number" id="size3XL" name="size3XL" min="0" value="0">
+
+        <label for="printingInstructions">General Printing Instructions</label>
+        <textarea id="printingInstructions" name="printingInstructions" rows="4"></textarea>
+
+        <label for="numColors">Number of Colors</label>
+        <input type="number" id="numColors" name="numColors" min="1" value="1" required>
+
+        <label for="color1Instructions">Instructions for Color 1</label>
+        <textarea id="color1Instructions" name="color1Instructions" rows="2"></textarea>
+
+        <label for="color2Instructions">Instructions for Color 2</label>
+        <textarea id="color2Instructions" name="color2Instructions" rows="2"></textarea>
+
+        <button type="submit">Submit Order</button>
+    </form>
+
+</body>
+</html>
