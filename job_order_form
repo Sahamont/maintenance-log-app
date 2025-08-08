@@ -1,0 +1,2 @@
+console.log("logs:", logs);
+console.log("logError:", logError);
