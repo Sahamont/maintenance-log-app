@@ -89,6 +89,11 @@
         .order('date', { ascending: false })
         .limit(5);
 
+      if (logsError) {
+        console.error("Error fetching logs:", logsError);
+      }
+
+
       const list = logs?.length
         ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
         : ["<li>No maintenance records found.</li>"];
