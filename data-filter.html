@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic CSV Filter App</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    select, input, button { margin: 5px; padding: 6px; }
+    #filterPanel { margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <h1>Dynamic CSV Filter App</h1>
+  
+  <input type="file" id="csvFile" accept=".csv"><br><br>
+
+  <div id="filterPanel" style="display:none;">
+    <select id="columnSelect"></select>
+    <select id="conditionSelect">
+      <option value="equals">Equals</option>
+      <option value="contains">Contains</option>
+      <option value="greater">Greater Than</option>
+      <option value="less">Less Than</option>
+    </select>
+    <input type="text" id="filterValue" placeholder="Enter value">
+    <button id="applyFilter">Apply Filter</button>
+    <button id="resetTable">Reset</button>
+  </div>
+
+  <div id="tableContainer"></div>
+
+  <script>
+    let csvData = [];
+    let originalData = [];
+    let headers = [];
+
+    function renderTable(data) {
+      if (data.length === 0) {
+        document.getElementById('tableContainer').innerHTML = "<p>No data to display</p>";
+        return;
+      }
+      
+      let keys = Object.keys(data[0]);
+      let html = "<table><thead><tr>";
+      keys.forEach(key => html += `<th>${key}</th>`);
+      html += "</tr></thead><tbody>";
+      
+      data.forEach(row => {
+        html += "<tr>";
+        keys.forEach(key => html += `<td>${row[key] ?? ''}</td>`);
+        html += "</tr>";
+      });
+      
+      html += "</tbody></table>";
+      document.getElementById('tableContainer').innerHTML = html;
+    }
+
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        complete: function(results) {
+          csvData = results.data.filter(row => Object.values(row).some(val => val !== null && val !== ""));
+          originalData = [...csvData];
+          headers = Object.keys(csvData[0]);
+
+          // Populate column dropdown
+          let colSelect = document.getElementById('columnSelect');
+          colSelect.innerHTML = "";
+          headers.forEach(h => {
+            let opt = document.createElement("option");
+            opt.value = h;
+            opt.textContent = h;
+            colSelect.appendChild(opt);
+          });
+
+          renderTable(csvData);
+          document.getElementById('filterPanel').style.display = "block";
+        }
+      });
+    });
+
+    document.getElementById('applyFilter').addEventListener('click', function() {
+      let col = document.getElementById('columnSelect').value;
+      let condition = document.getElementById('conditionSelect').value;
+      let val = document.getElementById('filterValue').value;
+
+      if (!col || val === "") {
+        alert("Please select a column and enter a value.");
+        return;
+      }
+
+      csvData = originalData.filter(row => {
+        let cell = row[col];
+        if (cell === null || cell === undefined) return false;
+
+        switch (condition) {
+          case "equals":
+            return String(cell).toLowerCase() === val.toLowerCase();
+          case "contains":
+            return String(cell).toLowerCase().includes(val.toLowerCase());
+          case "greater":
+            return parseFloat(cell) > parseFloat(val);
+          case "less":
+            return parseFloat(cell) < parseFloat(val);
+          default:
+            return false;
+        }
+      });
+
+      renderTable(csvData);
+    });
+
+    document.getElementById('resetTable').addEventListener('click', function() {
+      csvData = [...originalData];
+      renderTable(csvData);
+    });
+  </script>
+</body>
+</html>
