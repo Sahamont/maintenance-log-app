@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Shirt Order Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .variant { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    button { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Create Shirt Order</h1>
+
+  <!-- General Order Info -->
+  <form id="orderForm">
+    <h3>Order Info</h3>
+    <label>Customer Name: <input type="text" id="customer_name" required></label><br>
+    <label>Project Name: <input type="text" id="project_name" required></label><br>
+    <label>Printing Instructions: <textarea id="printing_instructions"></textarea></label><br>
+    <label>Number of Colors: <input type="number" id="number_of_colors" required></label><br>
+
+    <h3>Shirt Variants</h3>
+    <div id="variantsContainer"></div>
+    <button type="button" onclick="addVariant()">Add Shirt Variant</button><br><br>
+
+    <button type="submit">Submit Order</button>
+  </form>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+    const SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Add the first variant by default
+    window.onload = () => addVariant();
+
+    function addVariant() {
+      const container = document.getElementById('variantsContainer');
+      const div = document.createElement('div');
+      div.className = 'variant';
+
+      div.innerHTML = `
+        <label>Shirt Type: <input type="text" class="shirt_type" required></label><br>
+        <label>Shirt Color: <input type="text" class="shirt_color" required></label><br>
+        <label>Size: <input type="text" class="size" required></label><br>
+        <label>Quantity: <input type="number" class="quantity" required></label><br>
+        <label>Color Instructions: <input type="text" class="color_instructions"></label><br>
+        <button type="button" onclick="this.parentElement.remove()">Remove Variant</button>
+      `;
+      container.appendChild(div);
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      // 1️⃣ Insert into orders table
+      const { data: orderData, error: orderError } = await supabaseClient
+        .from('orders')
+        .insert([{
+          customer_name: document.getElementById('customer_name').value,
+          project_name: document.getElementById('project_name').value,
+          printing_instructions: document.getElementById('printing_instructions').value,
+          number_of_colors: parseInt(document.getElementById('number_of_colors').value)
+        }])
+        .select()
+        .single();
+
+      if (orderError) {
+        alert("Error creating order: " + orderError.message);
+        return;
+      }
+
+      const orderId = orderData.order_id;
+
+      // 2️⃣ Insert shirt variants into order_items table
+      const variants = [];
+      document.querySelectorAll('.variant').forEach(v => {
+        variants.push({
+          order_id: orderId,
+          shirt_type: v.querySelector('.shirt_type').value,
+          shirt_color: v.querySelector('.shirt_color').value,
+          size: v.querySelector('.size').value,
+          quantity: parseInt(v.querySelector('.quantity').value),
+          color_instructions: v.querySelector('.color_instructions').value
+        });
+      });
+
+      const { error: itemsError } = await supabaseClient
+        .from('order_items')
+        .insert(variants);
+
+      if (itemsError) {
+        alert("Error adding items: " + itemsError.message);
+        return;
+      }
+
+      alert("Order created successfully!");
+      document.getElementById('orderForm').reset();
+      document.getElementById('variantsContainer').innerHTML = '';
+      addVariant();
+    });
+  </script>
+</body>
+</html>
