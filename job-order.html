@@ -1,106 +1,264 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Create Order</title>
-  <style>
-    body { font-family: Arial; margin: 20px; }
-    label { display: block; margin-top: 10px; }
-    input, button { padding: 5px; }
-    table { margin-top: 15px; border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
-    th { background: #f0f0f0; }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Create Order — Dynamic Variants</title>
+
+  <!-- Tailwind CDN (dev). Matches the style of your other forms -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex items-start justify-center py-12">
+  <div class="w-full max-w-4xl bg-white rounded-2xl shadow p-6 border border-gray-200">
+    <h1 class="text-2xl font-semibold text-blue-700 mb-4 text-center">New Order — Variants & Sizes</h1>
 
-<h2>Create New Order</h2>
+    <!-- Order info -->
+    <form id="orderForm" class="space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Customer Name</label>
+          <input id="customerName" type="text" required class="w-full border rounded px-3 py-2" />
+        </div>
 
-<label>Customer Name:</label>
-<input type="text" id="customerName">
+        <div>
+          <label class="block text-sm font-medium mb-1">Project Name</label>
+          <input id="projectName" type="text" required class="w-full border rounded px-3 py-2" />
+        </div>
+      </div>
 
-<h3>Items</h3>
-<table id="itemsTable">
-  <thead>
-    <tr>
-      <th>Item Name</th>
-      <th>Quantity</th>
-      <th>Price</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+      <div>
+        <label class="block text-sm font-medium mb-1">General Printing Instructions</label>
+        <textarea id="printingInstructions" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+      </div>
 
-<button id="addItem">Add Item</button>
-<br><br>
-<button id="submitOrder">Submit Order</button>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Number of Colors</label>
+          <input id="numberOfColors" type="number" min="1" value="1" class="w-full border rounded px-3 py-2" />
+        </div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-  const supabaseUrl = "https://yumrglreoawfyvviyxgh.supabase.co";
-  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE";
-  const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+        <div class="flex items-end justify-end">
+          <button id="addVariantBtn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            + Add Variant
+          </button>
+        </div>
+      </div>
 
-  const itemsTable = document.querySelector("#itemsTable tbody");
-  document.getElementById("addItem").addEventListener("click", () => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td><input type="text" placeholder="Item Name"></td>
-      <td><input type="number" placeholder="Quantity" min="1"></td>
-      <td><input type="number" placeholder="Price" step="0.01"></td>
-      <td><button onclick="this.parentElement.parentElement.remove()">Remove</button></td>
-    `;
-    itemsTable.appendChild(row);
-  });
+      <hr class="my-2" />
 
-  document.getElementById("submitOrder").addEventListener("click", async () => {
-    const customerName = document.getElementById("customerName").value.trim();
-    if (!customerName) {
-      alert("Please enter customer name");
-      return;
-    }
+      <!-- Variants container -->
+      <div id="variantsContainer" class="space-y-4"></div>
 
-    // Insert order into Orders table
-    const { data: orderData, error: orderError } = await supabaseClient
-      .from("orders")
-      .insert([{ customer_name: customerName }])
-      .select();
+      <div class="pt-4">
+        <div id="statusMessage" class="text-center mb-4"></div>
+        <div class="flex gap-3">
+          <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700">Create Order</button>
+          <button id="resetBtn" type="button" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300">Reset</button>
+        </div>
+      </div>
+    </form>
+  </div>
 
-    if (orderError) {
-      console.error(orderError);
-      alert("Error creating order");
-      return;
-    }
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // ---------- Replace these with your Supabase details ----------
+    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
+    // -------------------------------------------------------------
+    const supabase = supabaseJs.createClient ? supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Note: the CDN above exposes `supabase` (older) or `supabaseJs`; handled above for compatibility.
 
-    const orderId = orderData[0].id;
+    // DOM refs
+    const variantsContainer = document.getElementById('variantsContainer');
+    const addVariantBtn = document.getElementById('addVariantBtn');
+    const orderForm = document.getElementById('orderForm');
+    const statusMessage = document.getElementById('statusMessage');
+    const resetBtn = document.getElementById('resetBtn');
 
-    // Insert items into Items table
-    const items = [];
-    itemsTable.querySelectorAll("tr").forEach(row => {
-      const name = row.querySelector("td:nth-child(1) input").value.trim();
-      const quantity = parseInt(row.querySelector("td:nth-child(2) input").value);
-      const price = parseFloat(row.querySelector("td:nth-child(3) input").value);
-      if (name && quantity > 0 && price >= 0) {
-        items.push({ order_id: orderId, item_name: name, quantity, price });
+    // Add a new variant card (with dynamic sizes)
+    function createVariantCard(defaults = {}) {
+      const variantId = `variant-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      const el = document.createElement('div');
+      el.className = 'bg-gray-50 p-4 rounded border border-gray-200';
+      el.dataset.variantTempId = variantId;
+
+      el.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-sm font-medium mb-1">Variant Name</label>
+                <input type="text" class="variant-name w-full border rounded px-2 py-1" value="${escapeHtml(defaults.variant_name||'')}" placeholder="e.g. Red Hoodie" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Color</label>
+                <input type="text" class="variant-color w-full border rounded px-2 py-1" value="${escapeHtml(defaults.color||'')}" placeholder="e.g. Black"/>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Material / Type</label>
+                <input type="text" class="variant-material w-full border rounded px-2 py-1" value="${escapeHtml(defaults.material||'')}" placeholder="e.g. Cotton"/>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold">Sizes & Quantities</h3>
+                <div class="flex gap-2">
+                  <button type="button" class="add-size-btn inline-flex items-center gap-2 bg-blue-500 text-white text-sm px-2 py-1 rounded hover:bg-blue-600">+ Size</button>
+                </div>
+              </div>
+
+              <div class="sizes-list space-y-2"></div>
+            </div>
+          </div>
+
+          <div class="flex-shrink-0 flex flex-col gap-2">
+            <button type="button" class="remove-variant-btn bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Remove</button>
+          </div>
+        </div>
+      `;
+
+      // add initial size row (S,M etc optional) — create one by default
+      const sizesList = el.querySelector('.sizes-list');
+      function addSizeRow(size = '', qty = '') {
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-3 gap-2 items-center';
+        row.innerHTML = `
+          <input type="text" placeholder="Size (S, M, L...)" class="size-field border rounded px-2 py-1" value="${escapeHtml(size)}" />
+          <input type="number" min="0" placeholder="Quantity" class="qty-field border rounded px-2 py-1" value="${escapeHtml(qty)}" />
+          <button type="button" class="remove-size-btn bg-red-400 text-white px-2 py-1 rounded hover:bg-red-500">Remove</button>
+        `;
+        row.querySelector('.remove-size-btn').addEventListener('click', () => row.remove());
+        sizesList.appendChild(row);
       }
+
+      // Add default sizes if provided
+      if (Array.isArray(defaults.sizes) && defaults.sizes.length) {
+        defaults.sizes.forEach(s => addSizeRow(s.size, s.quantity));
+      } else {
+        addSizeRow('', '');
+      }
+
+      // hook add size button
+      el.querySelector('.add-size-btn').addEventListener('click', () => addSizeRow('', ''));
+
+      // hook remove variant
+      el.querySelector('.remove-variant-btn').addEventListener('click', () => el.remove());
+
+      return el;
+    }
+
+    // escape helper to avoid injecting quotes
+    function escapeHtml(s) {
+      if (!s) return '';
+      return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    }
+
+    // initial variant
+    addVariantBtn.addEventListener('click', () => {
+      variantsContainer.appendChild(createVariantCard());
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     });
 
-    if (items.length > 0) {
-      const { error: itemsError } = await supabaseClient
-        .from("items")
-        .insert(items);
-      if (itemsError) {
-        console.error(itemsError);
-        alert("Error adding items");
+    // create one variant on load
+    variantsContainer.appendChild(createVariantCard());
+
+    // reset button
+    resetBtn.addEventListener('click', () => {
+      orderForm.reset();
+      variantsContainer.innerHTML = '';
+      variantsContainer.appendChild(createVariantCard());
+      statusMessage.innerHTML = '';
+    });
+
+    // submit handler
+    orderForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusMessage.innerHTML = '<span class="text-sm text-blue-700">Saving order...</span>';
+
+      // collect order-level data
+      const orderPayload = {
+        customer_name: document.getElementById('customerName').value.trim(),
+        project_name: document.getElementById('projectName').value.trim(),
+        printing_instructions: document.getElementById('printingInstructions').value.trim(),
+        number_of_colors: parseInt(document.getElementById('numberOfColors').value) || null
+      };
+
+      // basic validation
+      if (!orderPayload.customer_name || !orderPayload.project_name) {
+        statusMessage.innerHTML = '<span class="text-sm text-red-600">Please fill customer and project name.</span>';
         return;
       }
-    }
 
-    // Redirect to confirmation page
-    window.location.href = `confirmation.html?order_id=${orderId}`;
-  });
-</script>
+      try {
+        // 1) create order
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert([orderPayload])
+          .select()
+          .single();
 
+        if (orderError) throw orderError;
+        const orderId = orderData.order_id;
+
+        // 2) for each variant, insert into garment_variants and then sizes
+        const variantElements = Array.from(variantsContainer.querySelectorAll('[data-variant-temp-id]'));
+
+        for (const vEl of variantElements) {
+          const variantName = vEl.querySelector('.variant-name').value.trim();
+          const color = vEl.querySelector('.variant-color').value.trim();
+          const material = vEl.querySelector('.variant-material').value.trim();
+
+          // insert variant row
+          const { data: variantData, error: variantError } = await supabase
+            .from('garment_variants')
+            .insert([{
+              order_id: orderId,
+              variant_name: variantName || null,
+              color: color || null,
+              material: material || null
+            }])
+            .select()
+            .single();
+
+          if (variantError) throw variantError;
+          const variantId = variantData.id;
+
+          // collect sizes for this variant
+          const sizeRows = Array.from(vEl.querySelectorAll('.sizes-list > div'));
+          const sizesPayload = sizeRows.map(row => {
+            const size = row.querySelector('.size-field').value.trim();
+            const qty = parseInt(row.querySelector('.qty-field').value) || 0;
+            return { variant_id: variantId, size: size || null, quantity: qty };
+          }).filter(x => x.size || x.quantity > 0); // skip empty rows
+
+          if (sizesPayload.length) {
+            const { error: sizesError } = await supabase
+              .from('garment_variant_sizes')
+              .insert(sizesPayload);
+
+            if (sizesError) throw sizesError;
+          }
+        }
+
+        statusMessage.innerHTML = '<span class="text-green-700">✅ Order created successfully!</span>';
+        // optional: redirect to order page or reset
+        setTimeout(() => {
+          // reset
+          orderForm.reset();
+          variantsContainer.innerHTML = '';
+          variantsContainer.appendChild(createVariantCard());
+          statusMessage.innerHTML = '';
+        }, 1200);
+
+      } catch (err) {
+        console.error(err);
+        statusMessage.innerHTML = `<span class="text-red-600">Error: ${err.message || JSON.stringify(err)}</span>`;
+      }
+    });
+  </script>
 </body>
 </html>
-
