@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AR Maintenance Demo</title>
+    <!-- AR.js (marker-based AR) -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.2.1/aframe/build/aframe-ar.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <!-- AR scene -->
+    <a-scene embedded arjs="sourceType: webcam;">
+      <!-- Marker (replace with your QR/ArUco marker) -->
+      <a-marker type="pattern" url="markers/machine1.patt" id="marker1">
+        <!-- This plane will hold maintenance info -->
+        <a-entity id="infoPanel" position="0 0.1 0" rotation="-90 0 0">
+          <a-plane color="#222" height="1" width="1.5"></a-plane>
+          <a-text id="machineText" value="Loading..." color="#fff" align="center" width="1.4" position="0 0 0.01"></a-text>
+        </a-entity>
+      </a-marker>
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+      // 🔹 Step 2. Connect to Supabase
+      const supabase = window.supabase.createClient(
+        "https://YOUR_PROJECT.supabase.co",
+        "YOUR_PUBLIC_ANON_KEY"
+      );
+
+      // 🔹 Step 3. Load data when marker is detected
+      document.querySelector("#marker1").addEventListener("markerFound", async () => {
+        const machineId = 1; // Example: hardcode for demo, later map each marker to a machineId
+
+        let { data, error } = await supabase
+          .from("machines")
+          .select("name, model, last_maintenance, next_maintenance")
+          .eq("id", machineId)
+          .single();
+
+        if (error) {
+          console.error(error);
+          document.querySelector("#machineText").setAttribute("value", "Error loading data");
+          return;
+        }
+
+        // 🔹 Step 4. Show machine info in AR
+        const info = `${data.name}\nModel: ${data.model}\nLast: ${data.last_maintenance}\nNext: ${data.next_maintenance}`;
+        document.querySelector("#machineText").setAttribute("value", info);
+      });
+    </script>
+  </body>
+</html>
