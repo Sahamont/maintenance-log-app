@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Print Jobs Board</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f3f3f3; margin: 0; padding: 0; }
+    .board { display: flex; gap: 1rem; padding: 1rem; overflow-x: auto; }
+    .column { background: white; border-radius: 8px; padding: 1rem; min-width: 250px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .column h2 { font-size: 1.1rem; margin-bottom: .5rem; }
+    .card { background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: .5rem; margin-bottom: .5rem; cursor: grab; }
+    #controls { padding: 1rem; background: #222; color: white; display: flex; gap: 1rem; align-items: center; }
+    button { padding: .5rem 1rem; border: none; border-radius: 6px; background: #444; color: white; cursor: pointer; }
+    button:hover { background: #666; }
+    #columnSelector { background: white; padding: 1rem; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; }
+    #columnSelector h3 { margin-top: 0; }
+    #preview { margin-top: 1rem; max-height: 200px; overflow-y: auto; font-size: .9rem; background: #f9f9f9; padding: .5rem; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <input type="file" id="csvInput" />
+    <button id="addStageBtn">+ Add Stage</button>
+  </div>
+
+  <!-- Column selector panel -->
+  <div id="columnSelector">
+    <h3>Select columns to import:</h3>
+    <div id="checkboxes"></div>
+    <button id="createJobsBtn">Create Jobs</button>
+    <div id="preview"></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+<script>
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_KEY";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const board = document.getElementById("board");
+const csvInput = document.getElementById("csvInput");
+const addStageBtn = document.getElementById("addStageBtn");
+const colSelector = document.getElementById("columnSelector");
+const checkboxesDiv = document.getElementById("checkboxes");
+const previewDiv = document.getElementById("preview");
+const createJobsBtn = document.getElementById("createJobsBtn");
+
+let parsedData = [];
+
+// Load stages & jobs
+async function loadBoard() {
+  board.innerHTML = "";
+  let { data: stages } = await supabase.from("stages").select("*").order("position");
+  for (let stage of stages) {
+    let col = document.createElement("div");
+    col.className = "column";
+    col.dataset.id = stage.id;
+    col.innerHTML = `<h2>${stage.name}</h2><div class="cards"></div>`;
+    board.appendChild(col);
+
+    let { data: jobs } = await supabase.from("jobs").select("*").eq("stage_id", stage.id);
+    let cardsDiv = col.querySelector(".cards");
+    jobs.forEach(job => {
+      let card = document.createElement("div");
+      card.className = "card";
+      card.dataset.id = job.id;
+      card.innerHTML = `<strong>${job.title}</strong><br><small>${JSON.stringify(job.details)}</small>`;
+      cardsDiv.appendChild(card);
+    });
+
+    // Drag + drop
+    new Sortable(cardsDiv, {
+      group: "shared",
+      animation: 150,
+      onEnd: async (evt) => {
+        let jobId = evt.item.dataset.id;
+        let newStageId = evt.to.parentNode.dataset.id;
+        await supabase.from("jobs").update({ stage_id: newStageId }).eq("id", jobId);
+      }
+    });
+  }
+}
+
+// Add stage
+addStageBtn.addEventListener("click", async () => {
+  let name = prompt("Stage name?");
+  if (!name) return;
+  let { count } = await supabase.from("stages").select("id", { count: "exact" });
+  await supabase.from("stages").insert([{ name, position: count }]);
+  loadBoard();
+});
+
+// CSV upload
+csvInput.addEventListener("change", (e) => {
+  let file = e.target.files[0];
+  Papa.parse(file, {
+    header: true,
+    complete: (results) => {
+      parsedData = results.data.filter(row => Object.values(row).some(v => v)); // clean empty rows
+      let headers = Object.keys(parsedData[0] || {});
+      checkboxesDiv.innerHTML = "";
+      headers.forEach(h => {
+        let label = document.createElement("label");
+        label.style.display = "block";
+        label.innerHTML = `<input type="checkbox" value="${h}"> ${h}`;
+        checkboxesDiv.appendChild(label);
+      });
+      colSelector.style.display = "block";
+      previewDiv.innerHTML = "";
+    }
+  });
+});
+
+// Create jobs
+createJobsBtn.addEventListener("click", async () => {
+  let selectedCols = [...checkboxesDiv.querySelectorAll("input:checked")].map(c => c.value);
+  if (!selectedCols.length) { alert("Select at least one column"); return; }
+
+  // Show preview of first 5 rows
+  previewDiv.innerHTML = "<strong>Preview:</strong><br>";
+  parsedData.slice(0, 5).forEach(row => {
+    let jobTitle = selectedCols.map(c => row[c]).join(" - ");
+    previewDiv.innerHTML += jobTitle + "<br>";
+  });
+
+  // Insert jobs into first stage
+  let { data: firstStage } = await supabase.from("stages").select("*").order("position").limit(1);
+  if (!firstStage.length) { alert("No stages yet"); return; }
+
+  for (let row of parsedData) {
+    let jobTitle = selectedCols.map(c => row[c]).join(" - ");
+    let details = {};
+    selectedCols.forEach(c => details[c] = row[c]);
+    await supabase.from("jobs").insert([{ title: jobTitle, stage_id: firstStage[0].id, details }]);
+  }
+
+  alert("Jobs created!");
+  colSelector.style.display = "none";
+  loadBoard();
+});
+
+// Initial load
+loadBoard();
+</script>
+</body>
+</html>
