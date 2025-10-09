@@ -39,7 +39,8 @@
 <script>
 const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const board = document.getElementById("board");
 const csvInput = document.getElementById("csvInput");
@@ -54,7 +55,13 @@ let parsedData = [];
 // Load stages & jobs
 async function loadBoard() {
   board.innerHTML = "";
-  let { data: stages } = await supabase.from("stages").select("*").order("position");
+  let { data: stages, error: stagesError } = await client.from("stages").select("*").order("position");
+  if (stagesError) {
+    console.error("Error loading stages:", stagesError);
+    board.innerHTML = "<p style='padding:1rem;color:red;'>Error loading stages. Check console.</p>";
+    return;
+  }
+
   for (let stage of stages) {
     let col = document.createElement("div");
     col.className = "column";
@@ -62,7 +69,7 @@ async function loadBoard() {
     col.innerHTML = `<h2>${stage.name}</h2><div class="cards"></div>`;
     board.appendChild(col);
 
-    let { data: jobs } = await supabase.from("jobs").select("*").eq("stage_id", stage.id);
+    let { data: jobs } = await client.from("jobs").select("*").eq("stage_id", stage.id);
     let cardsDiv = col.querySelector(".cards");
     jobs.forEach(job => {
       let card = document.createElement("div");
@@ -78,8 +85,8 @@ async function loadBoard() {
       animation: 150,
       onEnd: async (evt) => {
         let jobId = evt.item.dataset.id;
-        let newStageId = evt.to.parentNode.dataset.id;
-        await supabase.from("jobs").update({ stage_id: newStageId }).eq("id", jobId);
+        let newStageId = evt.to.dataset.id; // ✅ fixed line
+        await client.from("jobs").update({ stage_id: newStageId }).eq("id", jobId);
       }
     });
   }
@@ -89,8 +96,9 @@ async function loadBoard() {
 addStageBtn.addEventListener("click", async () => {
   let name = prompt("Stage name?");
   if (!name) return;
-  let { count } = await supabase.from("stages").select("id", { count: "exact" });
-  await supabase.from("stages").insert([{ name, position: count }]);
+  let { data: existingStages } = await client.from("stages").select("id");
+  let count = existingStages ? existingStages.length : 0;
+  await client.from("stages").insert([{ name, position: count }]);
   loadBoard();
 });
 
@@ -100,7 +108,7 @@ csvInput.addEventListener("change", (e) => {
   Papa.parse(file, {
     header: true,
     complete: (results) => {
-      parsedData = results.data.filter(row => Object.values(row).some(v => v)); // clean empty rows
+      parsedData = results.data.filter(row => Object.values(row).some(v => v));
       let headers = Object.keys(parsedData[0] || {});
       checkboxesDiv.innerHTML = "";
       headers.forEach(h => {
@@ -120,22 +128,20 @@ createJobsBtn.addEventListener("click", async () => {
   let selectedCols = [...checkboxesDiv.querySelectorAll("input:checked")].map(c => c.value);
   if (!selectedCols.length) { alert("Select at least one column"); return; }
 
-  // Show preview of first 5 rows
   previewDiv.innerHTML = "<strong>Preview:</strong><br>";
   parsedData.slice(0, 5).forEach(row => {
     let jobTitle = selectedCols.map(c => row[c]).join(" - ");
     previewDiv.innerHTML += jobTitle + "<br>";
   });
 
-  // Insert jobs into first stage
-  let { data: firstStage } = await supabase.from("stages").select("*").order("position").limit(1);
-  if (!firstStage.length) { alert("No stages yet"); return; }
+  let { data: firstStage } = await client.from("stages").select("*").order("position").limit(1);
+  if (!firstStage || !firstStage.length) { alert("No stages yet"); return; }
 
   for (let row of parsedData) {
     let jobTitle = selectedCols.map(c => row[c]).join(" - ");
     let details = {};
     selectedCols.forEach(c => details[c] = row[c]);
-    await supabase.from("jobs").insert([{ title: jobTitle, stage_id: firstStage[0].id, details }]);
+    await client.from("jobs").insert([{ title: jobTitle, stage_id: firstStage[0].id, details }]);
   }
 
   alert("Jobs created!");
