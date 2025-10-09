@@ -2,155 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Print Jobs Board</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Print Board</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
-    body { font-family: sans-serif; background: #f3f3f3; margin: 0; padding: 0; }
-    .board { display: flex; gap: 1rem; padding: 1rem; overflow-x: auto; }
-    .column { background: white; border-radius: 8px; padding: 1rem; min-width: 250px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .column h2 { font-size: 1.1rem; margin-bottom: .5rem; }
-    .card { background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: .5rem; margin-bottom: .5rem; cursor: grab; }
-    #controls { padding: 1rem; background: #222; color: white; display: flex; gap: 1rem; align-items: center; }
-    button { padding: .5rem 1rem; border: none; border-radius: 6px; background: #444; color: white; cursor: pointer; }
-    button:hover { background: #666; }
-    #columnSelector { background: white; padding: 1rem; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; }
-    #columnSelector h3 { margin-top: 0; }
-    #preview { margin-top: 1rem; max-height: 200px; overflow-y: auto; font-size: .9rem; background: #f9f9f9; padding: .5rem; border-radius: 6px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #222;
+      padding: 1rem;
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .board {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .stage {
+      background: #2a2a2a;
+      border-radius: 10px;
+      min-width: 250px;
+      padding: 1rem;
+    }
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .job {
+      background: #333;
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin: 0.5rem 0;
+    }
+    .danger {
+      background: #d9534f;
+    }
   </style>
 </head>
 <body>
-  <div id="controls">
-    <input type="file" id="csvInput" />
-    <button id="addStageBtn">+ Add Stage</button>
+  <header>
+    <h1>Print Board</h1>
+  </header>
+  <div class="controls">
+    <button id="addStageBtn">Add Stage</button>
+    <button id="addJobBtn">Add Job</button>
+    <button id="resetBtn" class="danger">Reset Board</button>
   </div>
-
-  <!-- Column selector panel -->
-  <div id="columnSelector">
-    <h3>Select columns to import:</h3>
-    <div id="checkboxes"></div>
-    <button id="createJobsBtn">Create Jobs</button>
-    <div id="preview"></div>
-  </div>
-
   <div class="board" id="board"></div>
 
-<script>
-const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
+  <script>
+    // === CONFIGURE YOUR SUPABASE ===
+    const SUPABASE_URL = 'https://yumrglreoawfyvviyxgh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bXJnbHJlb2F3Znl2dml5eGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjgxMDIsImV4cCI6MjA2MzM0NDEwMn0.q9Gl79BRgQSzw912C7_3tmmZEtRBMANoi-ALKAk4GxE';
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const board = document.getElementById("board");
 
-const board = document.getElementById("board");
-const csvInput = document.getElementById("csvInput");
-const addStageBtn = document.getElementById("addStageBtn");
-const colSelector = document.getElementById("columnSelector");
-const checkboxesDiv = document.getElementById("checkboxes");
-const previewDiv = document.getElementById("preview");
-const createJobsBtn = document.getElementById("createJobsBtn");
-
-let parsedData = [];
-
-// Load stages & jobs
-async function loadBoard() {
-  board.innerHTML = "";
-  let { data: stages, error: stagesError } = await client.from("stages").select("*").order("position");
-  if (stagesError) {
-    console.error("Error loading stages:", stagesError);
-    board.innerHTML = "<p style='padding:1rem;color:red;'>Error loading stages. Check console.</p>";
-    return;
-  }
-
-  for (let stage of stages) {
-    let col = document.createElement("div");
-    col.className = "column";
-    col.dataset.id = stage.id;
-    col.innerHTML = `<h2>${stage.name}</h2><div class="cards"></div>`;
-    board.appendChild(col);
-
-    let { data: jobs } = await client.from("jobs").select("*").eq("stage_id", stage.id);
-    let cardsDiv = col.querySelector(".cards");
-    jobs.forEach(job => {
-      let card = document.createElement("div");
-      card.className = "card";
-      card.dataset.id = job.id;
-      card.innerHTML = `<strong>${job.title}</strong><br><small>${JSON.stringify(job.details)}</small>`;
-      cardsDiv.appendChild(card);
-    });
-
-    // Drag + drop
-    new Sortable(cardsDiv, {
-      group: "shared",
-      animation: 150,
-      onEnd: async (evt) => {
-        let jobId = evt.item.dataset.id;
-        let newStageId = evt.to.dataset.id; // ✅ fixed line
-        await client.from("jobs").update({ stage_id: newStageId }).eq("id", jobId);
+    async function loadBoard() {
+      board.innerHTML = "";
+      const { data: stages } = await client.from("stages").select("*").order("position");
+      for (let stage of stages) {
+        const { data: jobs } = await client.from("jobs").select("*").eq("stage_id", stage.id);
+        const stageDiv = document.createElement("div");
+        stageDiv.classList.add("stage");
+        stageDiv.innerHTML = `
+          <div class="stage-header">
+            <h2>${stage.name}</h2>
+            <button class="danger" onclick="deleteStage(${stage.id})">✕</button>
+          </div>
+          <div id="jobs-${stage.id}">
+            ${jobs.map(job => `
+              <div class="job">
+                <strong>${job.title}</strong><br>
+                <small>${job.details}</small><br>
+                <button class="danger" onclick="deleteJob(${job.id})">Delete</button>
+              </div>
+            `).join("")}
+          </div>
+        `;
+        board.appendChild(stageDiv);
       }
-    });
-  }
-}
-
-// Add stage
-addStageBtn.addEventListener("click", async () => {
-  let name = prompt("Stage name?");
-  if (!name) return;
-  let { data: existingStages } = await client.from("stages").select("id");
-  let count = existingStages ? existingStages.length : 0;
-  await client.from("stages").insert([{ name, position: count }]);
-  loadBoard();
-});
-
-// CSV upload
-csvInput.addEventListener("change", (e) => {
-  let file = e.target.files[0];
-  Papa.parse(file, {
-    header: true,
-    complete: (results) => {
-      parsedData = results.data.filter(row => Object.values(row).some(v => v));
-      let headers = Object.keys(parsedData[0] || {});
-      checkboxesDiv.innerHTML = "";
-      headers.forEach(h => {
-        let label = document.createElement("label");
-        label.style.display = "block";
-        label.innerHTML = `<input type="checkbox" value="${h}"> ${h}`;
-        checkboxesDiv.appendChild(label);
-      });
-      colSelector.style.display = "block";
-      previewDiv.innerHTML = "";
     }
-  });
-});
 
-// Create jobs
-createJobsBtn.addEventListener("click", async () => {
-  let selectedCols = [...checkboxesDiv.querySelectorAll("input:checked")].map(c => c.value);
-  if (!selectedCols.length) { alert("Select at least one column"); return; }
+    // === ADD STAGE ===
+    document.getElementById("addStageBtn").addEventListener("click", async () => {
+      const name = prompt("Stage name:");
+      if (!name) return;
+      const { count } = await client.from("stages").select("*", { count: "exact" });
+      await client.from("stages").insert([{ name, position: count }]);
+      loadBoard();
+    });
 
-  previewDiv.innerHTML = "<strong>Preview:</strong><br>";
-  parsedData.slice(0, 5).forEach(row => {
-    let jobTitle = selectedCols.map(c => row[c]).join(" - ");
-    previewDiv.innerHTML += jobTitle + "<br>";
-  });
+    // === ADD JOB ===
+    document.getElementById("addJobBtn").addEventListener("click", async () => {
+      const jobTitle = prompt("Job title:");
+      const details = prompt("Job details:");
+      const { data: firstStage } = await client.from("stages").select("*").order("position").limit(1);
+      if (!firstStage?.length) return alert("Add a stage first!");
+      await client.from("jobs").insert([{ title: jobTitle, stage_id: firstStage[0].id, details }]);
+      loadBoard();
+    });
 
-  let { data: firstStage } = await client.from("stages").select("*").order("position").limit(1);
-  if (!firstStage || !firstStage.length) { alert("No stages yet"); return; }
+    // === DELETE STAGE ===
+    async function deleteStage(id) {
+      if (!confirm("Delete this stage and all its jobs?")) return;
+      await client.from("jobs").delete().eq("stage_id", id);
+      await client.from("stages").delete().eq("id", id);
+      loadBoard();
+    }
 
-  for (let row of parsedData) {
-    let jobTitle = selectedCols.map(c => row[c]).join(" - ");
-    let details = {};
-    selectedCols.forEach(c => details[c] = row[c]);
-    await client.from("jobs").insert([{ title: jobTitle, stage_id: firstStage[0].id, details }]);
-  }
+    // === DELETE JOB ===
+    async function deleteJob(id) {
+      if (!confirm("Delete this job?")) return;
+      await client.from("jobs").delete().eq("id", id);
+      loadBoard();
+    }
 
-  alert("Jobs created!");
-  colSelector.style.display = "none";
-  loadBoard();
-});
+    // === RESET BOARD ===
+    document.getElementById("resetBtn").addEventListener("click", async () => {
+      if (!confirm("⚠️ This will delete ALL stages and jobs. Continue?")) return;
+      await client.from("jobs").delete().neq("id", 0);
+      await client.from("stages").delete().neq("id", 0);
+      loadBoard();
+    });
 
-// Initial load
-loadBoard();
-</script>
+    loadBoard();
+  </script>
 </body>
 </html>
