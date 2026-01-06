@@ -90,7 +90,7 @@
         .limit(5);
 
       const list = logs?.length
-        ? logs.map(log => `<li><strong>${log.date}</strong>: ${log.maintenance} by ${log.technician}</li>`)
+        ? logs.map(log => `<li><strong>${log.created_at}</strong>: ${log.maintenance} by ${log.technician}</li>`)
         : ["<li>No maintenance records found.</li>"];
 
       document.getElementById("maintenance-records").innerHTML = list.join('');
